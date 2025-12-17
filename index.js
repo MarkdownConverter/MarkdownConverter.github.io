@@ -21,6 +21,7 @@ function convertMarkdown(text) {
     for (let i = 0; i < lines.length(); i++) {
         let line = lines[i];
 
+        // Code Blocks
         if (line.trim().startsWith('```')) {
             if (!inCodeBlock) {
                 inCodeBlock = true;
@@ -39,6 +40,33 @@ function convertMarkdown(text) {
             continue;
         }
 
+        // Lists
+        const unorderedMatch = line.match(/^[\-\*\+]\s+(.+)$/);
+        const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
+
+		if (unorderedMatch || orderedMatch) {
+			const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
+			const currentType = unorderedMatch ? 'ul' : 'ol';
+
+			if (!inList) {
+                inList = true;
+                listType = currentType;
+                listItems = '';
+            } else if (listType !== currentType) {
+                html += `<${listType}>${listItems}</${listType}>\n`;
+                listType = currentType;
+                listItems = '';
+            }
+
+			listItems += `<li>${processInline(escapeHtml(content))}</li>`;
+            continue;
+		} else if (inList) {
+			html += `<${listType}>${listItems}</${listType}>\n`;
+			inList = false;
+			listType = '';
+		}
+        
+        // Plain text
         if (line.trim() === '') {
             html += '\n';
         } else {
