@@ -73,7 +73,7 @@ function convertMarkdown(text) {
 			const level = headingMatch[1];
 			const content = headingMatch[2];
 			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
-            continue;
+      continue;
 		}
 
 		// Quotes
