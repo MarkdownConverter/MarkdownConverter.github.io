@@ -70,7 +70,7 @@ function convertMarkdown(text) {
 		// Headings
 		const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
 		if (headingMatch) {
-			const level = headingMatch[1].length();
+			const level = headingMatch[1].length;
 			const content = headingMatch[2];
 			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
       continue;
