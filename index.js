@@ -24,10 +24,10 @@ function convertMarkdown(text) {
     // Code Blocks
     if (line.trim().startsWith('```')) {
       if (!inCodeBlock) {
-        CodeBlock = true;
+        inCodeBlock = true;
         codeBlockContent = '';
       } else {
-        html += `<pre><code>${escapeHtml(codeBlockContent)}</pre></code>\n`;
+        html += `<pre><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
         codeBlockContent = '';
         inCodeBlock = false;
       }
@@ -68,9 +68,9 @@ function convertMarkdown(text) {
 		}
 
 		// Headings
-		const headingMatch = line.match(/^(#{1,6})\s+(.+)&/);
+		const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
 		if (headingMatch) {
-			const level = headingMatch[1];
+			const level = headingMatch[1].length();
 			const content = headingMatch[2];
 			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
       continue;
@@ -127,7 +127,7 @@ function escapeHtml(text) {
 }
 
 html.convert.addEventListener('click', () => {
-  const markdown = input.value;
-  const html = convertMarkdown(markdown);
-  output.innerHTML = html;
+  const markdown = html.input.value;
+  const output = convertMarkdown(markdown);
+  html.output.innerHTML = output;
 });
