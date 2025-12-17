@@ -18,7 +18,7 @@ function convertMarkdown(text) {
     let listItems = '';
     let listType = '';
 
-    for (let i = 0; i < lines.length(); i++) {
+    for (let i = 0; i < lines.length; i++) {
         let line = lines[i];
 
         // Code Blocks
@@ -64,8 +64,32 @@ function convertMarkdown(text) {
 			html += `<${listType}>${listItems}</${listType}>\n`;
 			inList = false;
 			listType = '';
+			listItems = '';
 		}
-        
+
+		// Headings
+		const headingMatch = line.match(/^(#{1,6})\s+(.+)&/);
+		if (headingMatch) {
+			const level = headingMatch[1];
+			const content = headingMatch[2];
+			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
+            continue;
+		}
+
+		// Quotes
+		const quoteMatch = line.match(/^>\s+(.+)$/);
+        if (quoteMatch) {
+			const content = quoteMatch[1];
+    		html += `<blockquote>${processInline(escapeHtml(content))}</blockquote>\n`;
+            continue;
+        }
+
+		// Horizontal Lines
+		if (line.trim().match(/^(\-{3,}|\*{3,}|_{3,})$/)) {
+	    	html += '<hr>\n';
+	        continue;
+        }
+		
         // Plain text
         if (line.trim() === '') {
             html += '\n';
@@ -73,6 +97,13 @@ function convertMarkdown(text) {
             html += `<p>${processInLine(escapeHtml(line))}</p>`;
         }
     }
+
+	// Close any open lists
+    if (inList) {
+	    html += `<${listType}>${listItems}</${listType}>\n`;
+	}
+	
+	return html;
 }
 
 function processInline(text) {
