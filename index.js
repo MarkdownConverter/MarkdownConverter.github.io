@@ -1,215 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <title>Markdown Converter</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      * {
-        padding: 0px;
-        margin: 0px;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: 'Roboto', sans-serif;
-        display: flex;
-        justify-content: center;
-        flex-direction: column; 
-        align-items: center;
-        min-height: 100vh;
-        background-color: rgb(240, 240, 240);
-      }
-      .h1 {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100px;
-        font-size: 2rem;
-        color: rgb(255, 255, 255);
-        background-color: rgb(0, 100, 170);
-        border-top-right-radius: 6px;
-        border-top-left-radius: 6px;
-      }
-      .h2 {
-        color: rgb(0, 100, 170);
-      }
-      button {
-        width: 100px;
-        height: 50px;
-        font-size: 1rem;
-        border: 2px solid rgb(0, 100, 170);
-        border-radius: 10px;
-        background-color: transparent;
-        color: rgb(0, 100, 170);
-        text-decoration: none;
-        text-align: center;
-        cursor: pointer;
-        transition-duration: 0.3s;
-      }
-      button:hover {
-        transform: translateY(-5px);
-      }
-      button:active {
-        transition-duration: 0s;
-        border-color: rgb(0, 100, 170);
-        background-color: rgb(0, 100, 170);
-        color: rgb(255, 255, 255);
-      }
-      button.active {
-        transition-duration: 0s;
-        background-color: rgb(0, 100, 170);
-        border-color: rgb(0, 100, 170);
-        color: rgb(255, 255, 255);
-      }
-      textarea {
-        display: flex;
-        justify-content: flex-start;
-        align-items: flex-start;
-        max-width: 100%;
-        min-width: 100%;
-        width: 100%;
-        min-height: 400px;
-        height: 400px;
-        padding: 1rem;
-        font-size: 1rem;
-        border: 1px solid rgb(0, 100, 170);
-        border-radius: 10px;
-        background-color: rgb(255, 255, 255);
-        outline: none;
-      }
-      textarea:focus {
-        border-width: 2px;
-      }
-      
-      .mainDiv {
-        max-width: 1200px;
-        width: 90%;
-        border: 2px solid rgb(0, 100, 170);
-        border-radius: 10px;
-        background-color: rgb(255, 255, 255);
-        margin: 20px;
-      }
-      .codeContainer {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: stretch;
-        width: 100%;
-        height: fit-content;
-        border-bottom: 1px solid rgb(0, 100, 170);
-        background-color: rgb(250, 252, 255);
-      }
-      .buttonContainer {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        padding: 1rem;
-        background-color: rgb(250, 252, 255);
-        border-bottom-right-radius: 10px;
-        border-bottom-left-radius: 10px;
-        gap: 5px;
-      }
-      .code {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 50%;
-        height: auto;
-        border-right: 1px solid rgb(0, 100, 170);
-        padding: 20px;
-      }
-      .output {
-        width: 100%;
-        flex-grow: 1;
-        padding: 1rem;
-        font-size: 1rem;
-        border: 1px solid rgb(0, 100, 170);
-        border-radius: 10px;
-        background-color: rgb(255, 255, 255);
+const html = {
+  input: document.getElementById('input'),
+  output: document.getElementById('output'),
+  convert: document.getElementById('convert'),
+  clear: document.getElementById('clear'),
+  copy: document.getElementById('copy'),
+  live: document.getElementById('live'),
+}
+
+let live = false;
+
+function convertMarkdown(text) {
+  let lines = text.split('\n');
+  let html = '';
+  let inCodeBlock = false;
+  let codeBlockContent = '';
+  let inList = false;
+  let listItems = '';
+  let listType = '';
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Code Blocks
+    if (line.trim().startsWith('```')) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeBlockContent = '';
+      } else {
+        html += `<pre><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
+        codeBlockContent = '';
+        inCodeBlock = false;
       }
 
-      #output h1 { font-size: 2em; margin: 0.67em 0; }
-      #output h2 { font-size: 1.5em; margin: 0.75em 0; }
-      #output h3 { font-size: 1.17em; margin: 0.83em 0; }
-      #output h4 { font-size: 1em; margin: 1em 0; }
-      #output h5 { font-size: 0.83em; margin: 1.17em 0; }
-      #output h6 { font-size: 0.67em; margin: 1.33em 0; }
-      #output p { margin: 1em 0; }
-      #output strong { font-weight: bold; }
-      #output em { font-style: italic; }
-      #output code { 
-        background: #2d2d2d; 
-        color: #f8f8f2;
-        padding: 0.2em 0.4em; 
-        border-radius: 3px; 
-        font-family: 'Courier New', monospace;
-        font-size: 0.9em;
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent += `${line}\n`;
+      continue;
+    }
+
+    // Lists
+    const unorderedMatch = line.match(/^[\-\*\+]\s+(.+)$/);
+    const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
+
+		if (unorderedMatch || orderedMatch) {
+		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
+		  const currentType = unorderedMatch ? 'ul' : 'ol';
+
+			if (!inList) {
+        inList = true;
+        listType = currentType;
+        listItems = '';
+      } else if (listType !== currentType) {
+        html += `<${listType}>${listItems}</${listType}>\n`;
+        listType = currentType;
+        listItems = '';
       }
-      #output pre {
-        background: #2d2d2d;
-        color: #f8f8f2;
-        padding: 1em;
-        border-radius: 5px;
-        overflow-x: auto;
-        margin: 1em 0;
-      }
-      #output pre code {
-        background: none;
-        font-family: 'Courier New', monospace;
-        color: inherit;
-        padding: 0;
-      }
-      #output ul, #output ol { 
-        margin: 1em 0; 
-        padding-left: 2em; 
-      }
-      #output li { margin: 0.5em 0; }
-      #output blockquote {
-        border-left: 4px solid #777;
-        padding-left: 1em;
-        margin: 1em 0;
-        color: #666;
-        font-style: italic;
-      }
-      #output a {
-        color: #05b;
-        text-decoration: none;
-      }
-      #output a:hover {
-        text-decoration: underline;
-      }
-      #output hr {
-        border: none;
-        border-top: 2px solid #777;
-        margin: 12px 0;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="mainDiv">
-      <h1 class="h1">Markdown Converter</h1>
-      <div class="codeContainer">
-        <div class="code">
-          <h2 class="h2">Markdown</h2>
-          <textarea id="input" placeholder="Enter Text"></textarea>
-        </div>
-        <div class="code" style="border: none;">
-          <h2 class="h2">HTML</h2>
-          <div id="output" class="output">
-          </div>
-        </div>
-      </div>
-      <div class="buttonContainer">
-        <button id="convert">Convert</button>
-        <button id="clear">Clear Text</button>
-        <button id="copy">Copy Text</button>
-        <button id="live">Live Translation</button>
-      </div>
-      <script src="index.js"></script>
-    </div>
-  </body>
-</html>		}
+
+			listItems += `<li>${processInline(escapeHtml(content))}</li>`;
+      continue;
+		} else if (inList) {
+			html += `<${listType}>${listItems}</${listType}>\n`;
+			inList = false;
+			listType = '';
+			listItems = '';
+		}
 
 		// Headings
 		const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
@@ -278,11 +134,19 @@ html.convert.addEventListener('click', () => {
 
 html.clear.addEventListener('click', () => {
   html.input.value = '';
+  if (live) {
+    const markdown = html.input.value;
+    const output = convertMarkdown(markdown);
+    html.output.innerHTML = output;
+  }
 });
 
 html.live.addEventListener('click', () => {
   html.live.classList.toggle('active');
   live = !live;
+  const markdown = html.input.value;
+  const output = convertMarkdown(markdown);
+  html.output.innerHTML = output;
 });
 
 html.input.addEventListener('input', () => {
