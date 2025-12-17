@@ -94,7 +94,7 @@ function convertMarkdown(text) {
         if (line.trim() === '') {
             html += '\n';
         } else {
-            html += `<p>${processInline(escapeHtml(line))}</p>`;
+            html += `<p>${processInline(escapeHtml(line))}</p>\n`;
         }
     }
 
