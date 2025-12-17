@@ -131,3 +131,20 @@ html.convert.addEventListener('click', () => {
   const output = convertMarkdown(markdown);
   html.output.innerHTML = output;
 });
+
+html.clear.addEventListener('click', () => {
+  html.input.value = '';
+});
+
+html.live.addEventListener('click', () => {
+  html.live.classList.toggle('active');
+  live = !live;
+});
+
+html.input.addEventListener('input', () => {
+  if (live) {
+    const markdown = html.input.value;
+    const output = convertMarkdown(markdown);
+    html.output.innerHTML = output;
+  }
+});
