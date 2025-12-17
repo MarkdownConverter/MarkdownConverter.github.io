@@ -36,7 +36,7 @@ function convertMarkdown(text) {
     }
 
     if (inCodeBlock) {
-      deBlockContent += `${line}\n`;
+      codeBlockContent += `${line}\n`;
       continue;
     }
 
@@ -46,7 +46,7 @@ function convertMarkdown(text) {
 
 		if (unorderedMatch || orderedMatch) {
 		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
-			const currentType = unorderedMatch ? 'ul' : 'ol';
+		  const currentType = unorderedMatch ? 'ul' : 'ol';
 
 			if (!inList) {
         inList = true;
