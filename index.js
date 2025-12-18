@@ -22,16 +22,17 @@ function convertMarkdown(text) {
     let line = lines[i];
 
     // Code Blocks
-    if (line.trim().startsWith('```')) {
+    const codeMatch = line.match(/^(\s*)```$/);
+    if (codeMatch) {
+      const indent = codeMatch[1].length * 4 + 8;
       if (!inCodeBlock) {
         inCodeBlock = true;
         codeBlockContent = '';
       } else {
-        html += `<pre><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
+        html += `<pre style="margin-left: ${indent}px"><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
         codeBlockContent = '';
         inCodeBlock = false;
       }
-
       continue;
     }
 
@@ -41,12 +42,13 @@ function convertMarkdown(text) {
     }
 
     // Lists
-    const unorderedMatch = line.match(/^[\-\*\+]\s+(.+)$/);
-    const orderedMatch = line.match(/^\d+\.\s+(.+)$/);
+    const unorderedMatch = line.match(/^(\s*)[\-\*\+]\s+(.+)$/);
+    const orderedMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
 
 		if (unorderedMatch || orderedMatch) {
-		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
+		  const content = unorderedMatch ? unorderedMatch[2] : orderedMatch[2];
 		  const currentType = unorderedMatch ? 'ul' : 'ol';
+      const indent = unorderedMatch ? unorderedMatch[1].length * 4 + 8 : orderedMatch[1].length * 4 + 8;
 
 			if (!inList) {
         inList = true;
@@ -58,7 +60,7 @@ function convertMarkdown(text) {
         listItems = '';
       }
 
-			listItems += `<li>${processInline(escapeHtml(content))}</li>`;
+			listItems += `<li style="margin-left: ${indent}px">${processInline(escapeHtml(content))}</li>`;
       continue;
 		} else if (inList) {
 			html += `<${listType}>${listItems}</${listType}>\n`;
@@ -68,19 +70,21 @@ function convertMarkdown(text) {
 		}
 
 		// Headings
-		const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+		const headingMatch = line.match(/^(\s*)(#{1,6})\s+(.+)$/);
 		if (headingMatch) {
-			const level = headingMatch[1].length;
-			const content = headingMatch[2];
-			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
+			const level = headingMatch[2].length;
+			const content = headingMatch[3];
+      const indent = headingMatch[1].length * 4;
+			html += `<h${level} style="margin-left: ${indent}px">${processInline(escapeHtml(content))}</h${level}>\n`;
       continue;
 		}
 
 		// Quotes
-		const quoteMatch = line.match(/^>\s+(.+)$/);
+		const quoteMatch = line.match(/^(\s*)>\s+(.+)$/);
     if (quoteMatch) {
-			const content = quoteMatch[1];
-    	html += `<blockquote>${processInline(escapeHtml(content))}</blockquote>\n`;
+			const content = quoteMatch[2];
+      const indent = quoteMatch[1] * 4;
+    	html += `<blockquote style="margin-left: ${indent}">${processInline(escapeHtml(content))}</blockquote>\n`;
       continue;
     }
 
