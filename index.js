@@ -22,7 +22,7 @@ function convertMarkdown(text) {
     let line = lines[i];
 
     // Code Blocks
-    const codeMatch = line.match(/^(\t*)(\s*)```$/);
+    const codeMatch = line.match(/^(\t*)([ ]*)```.*$/);
     if (codeMatch) {
       const indent = codeMatch[1].length * 16 + codeMatch[2].length * 4 + 8;
       if (!inCodeBlock) {
@@ -42,13 +42,13 @@ function convertMarkdown(text) {
     }
 
     // Lists
-    const unorderedMatch = line.match(/^(\t*)(\s*)[\-\*\+]\s+(.+)$/);
-    const orderedMatch = line.match(/^(\t*)(\s*)\d+\.\s+(.+)$/);
+    const unorderedMatch = line.match(/^(\t*)([ ]*)[\-\*\+]\s+(.+)$/);
+    const orderedMatch = line.match(/^(\t*)([ ]*)\d+\.\s+(.+)$/);
 
 		if (unorderedMatch || orderedMatch) {
 		  const content = unorderedMatch ? unorderedMatch[3] : orderedMatch[3];
 		  const currentType = unorderedMatch ? 'ul' : 'ol';
-      const indent = unorderedMatch ? unorderedMatch[1] * 16 + unorderedMatch[2].length * 4 + 8 : orderedMatch[1] * 16 + orderedMatch[2].length * 4 + 8;
+      const indent = unorderedMatch ? unorderedMatch[1].length * 16 + unorderedMatch[2].length * 4 + 8 : orderedMatch[1] * 16 + orderedMatch[2].length * 4 + 8;
 
 			if (!inList) {
         inList = true;
@@ -70,7 +70,7 @@ function convertMarkdown(text) {
 		}
 
 		// Headings
-		const headingMatch = line.match(/^(\t*)(\s*)(#{1,6})\s+(.+)$/);
+		const headingMatch = line.match(/^(\t*)([ ]*)(#{1,6})\s+(.+)$/);
 		if (headingMatch) {
 			const level = headingMatch[3].length;
 			const content = headingMatch[4];
@@ -80,10 +80,10 @@ function convertMarkdown(text) {
 		}
 
 		// Quotes
-		const quoteMatch = line.match(/^(\t*)(\s*)>\s+(.+)$/);
+		const quoteMatch = line.match(/^(\t*)([ ]*)>\s+(.+)$/);
     if (quoteMatch) {
 			const content = quoteMatch[3];
-      const indent = quoteMatch[1] * 16 + quoteMatch[2] * 4;
+      const indent = quoteMatch[1].length * 16 + quoteMatch[2].length * 4;
     	html += `<blockquote style="margin-left: ${indent}">${processInline(escapeHtml(content))}</blockquote>\n`;
       continue;
     }
@@ -98,7 +98,9 @@ function convertMarkdown(text) {
     if (line.trim() === '') {
       html += '\n';
     } else {
-      const indent = line.match(/^(\t*).*$/);
+      const textMatch = line.match(/^(\t*)([ ]*).*$/);
+      console.log(textMatch);
+      const indent = textMatch[1].length * 16 + textMatch[2].length * 4;
       html += `<p style="margin-left: ${indent}px">${processInline(escapeHtml(line))}</p>\n`;
     }
   }
@@ -165,6 +167,8 @@ html.input.addEventListener('input', () => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Tab') {
     event.preventDefault();  
-    if (document.activeElement === html.input) html.input.value += '\t';
+    if (document.activeElement === html.input) {
+      html.input.setRangeText('\t', html.input.selectionStart, html.input.selectionEnd, 'end');
+    }
   }
 });
