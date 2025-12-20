@@ -14,21 +14,33 @@ function convertMarkdown(text) {
   let html = '';
   let inCodeBlock = false;
   let codeBlockContent = '';
+	let codeBlockIndent = '';
   let inList = false;
   let listItems = '';
   let listType = '';
+	let listStack = [];
+	let indentLevel = 0;
+
+	function indent() {
+		return '    '.repeat(indentLevel);
+	}
 
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
 
+		const indentMatch = line.match(/^(\s*)/);
+    const indent = indentMatch ? indentMatch[1].replace(/\t/g, '    ').length : 0;
+    indentLevel = Math.floor(indent / 4);
+		
     // Code Blocks
     const codeMatch = line.match(/^\s*```.*$/);
     if (codeMatch) {
       if (!inCodeBlock) {
         inCodeBlock = true;
         codeBlockContent = '';
+				codeBlockIndent = indent();
       } else {
-        html += `<pre><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
+        html += `${codeBlockIndent}<pre><code>${escapeHtml(codeBlockContent)}</code></pre>\n`;
         codeBlockContent = '';
         inCodeBlock = false;
       }
@@ -48,31 +60,34 @@ function convertMarkdown(text) {
 		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
 		  const currentType = unorderedMatch ? 'ul' : 'ol';
 
-			if (!inList) {
-        inList = true;
-        listType = currentType;
-        listItems = '';
-      } else if (listType !== currentType) {
-        html += `<${listType}>${listItems}</${listType}>\n`;
-        listType = currentType;
-        listItems = '';
+      while (listStack.length > indentLevel || listStack.at(-1) !== currentType) {
+        indentLevel--;
+        const closingType = listStack.pop();
+        output += `${indent()}</${closingType}>\n`;
       }
 
-			listItems += `<li>${processInline(escapeHtml(content))}</li>`;
+      if (listStack.length === indentLevel) {
+        output += `${indent()}<${currentType}>\n`;
+        listStack.push(currentType);
+        indentLevel++;
+      }
+
+			listItems += `${indent()}<li>${processInline(escapeHtml(content))}</li>`;
       continue;
-		} else if (inList) {
-			html += `<${listType}>${listItems}</${listType}>\n`;
-			inList = false;
-			listType = '';
-			listItems = '';
-		}
+		} else {
+      while (listStack.length > 0) {
+        indentLevel--;
+        const closingType = listStack.pop();
+        output += `${indent()}</${closingType}>\n`;
+      }
+    }
 
 		// Headings
 		const headingMatch = line.match(/^\s*(#{1,6})\s+(.+)$/);
 		if (headingMatch) {
 			const level = headingMatch[1].length;
 			const content = headingMatch[2];
-			html += `<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
+			html += `${indent()}<h${level}>${processInline(escapeHtml(content))}</h${level}>\n`;
       continue;
 		}
 
@@ -80,7 +95,7 @@ function convertMarkdown(text) {
 		const quoteMatch = line.match(/^\s*>\s+(.+)$/);
     if (quoteMatch) {
 			const content = quoteMatch[1];
-    	html += `<blockquote>${processInline(escapeHtml(content))}</blockquote>\n`;
+    	html += `${indent()}<blockquote>${processInline(escapeHtml(content))}</blockquote>\n`;
       continue;
     }
 
@@ -94,14 +109,9 @@ function convertMarkdown(text) {
     if (line.trim() === '') {
       html += '\n';
     } else {
-      html += `<p>${processInline(escapeHtml(line))}</p>\n`;
+      html += `${indent()}<p>${processInline(escapeHtml(line))}</p>\n`;
     }
   }
-
-	// Close any open lists
-  if (inList) {
-	  html += `<${listType}>${listItems}</${listType}>\n`;
-	}
 	
 	return html;
 }
