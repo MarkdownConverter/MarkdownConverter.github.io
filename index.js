@@ -21,16 +21,16 @@ function convertMarkdown(text) {
 	let listStack = [];
 	let indentLevel = 0;
 
-	function indent() {
-		return '    '.repeat(indentLevel);
-	}
-
+  function indent() {
+    return '    '.repeat(indentLevel);
+  }
+  
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
 
 		const indentMatch = line.match(/^(\s*)/);
-    const indent = indentMatch ? indentMatch[1].replace(/\t/g, '    ').length : 0;
-    indentLevel = Math.floor(indent / 4);
+    const mdIndent = indentMatch ? indentMatch[1].replace(/\t/g, '    ').length : 0;
+    indentLevel = Math.floor(mdIndent / 4);
 		
     // Code Blocks
     const codeMatch = line.match(/^\s*```.*$/);
@@ -60,8 +60,12 @@ function convertMarkdown(text) {
 		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
 		  const currentType = unorderedMatch ? 'ul' : 'ol';
 
-      while (listStack.length > indentLevel || listStack.at(-1) !== currentType) {
-        indentLevel--;
+      while (listStack.length > indentLevel) {
+        const closingType = listStack.pop();
+        output += `${indent()}</${closingType}>\n`;
+      }
+
+      if (listStack.length === indentLevel && listStack.length > 0 && listStack[listStack.length - 1] !== currentType) {
         const closingType = listStack.pop();
         output += `${indent()}</${closingType}>\n`;
       }
@@ -69,14 +73,12 @@ function convertMarkdown(text) {
       if (listStack.length === indentLevel) {
         output += `${indent()}<${currentType}>\n`;
         listStack.push(currentType);
-        indentLevel++;
       }
-
+      
 			listItems += `${indent()}<li>${processInline(escapeHtml(content))}</li>`;
       continue;
 		} else {
       while (listStack.length > 0) {
-        indentLevel--;
         const closingType = listStack.pop();
         output += `${indent()}</${closingType}>\n`;
       }
