@@ -94,8 +94,6 @@ function convertMarkdown(text) {
     if (line.trim() === '') {
       html += '\n';
     } else {
-      const textMatch = line.match(/^\s*.*$/);
-      console.log(textMatch);
       html += `<p>${processInline(escapeHtml(line))}</p>\n`;
     }
   }
@@ -164,6 +162,11 @@ document.addEventListener('keydown', event => {
     event.preventDefault();  
     if (document.activeElement === html.input) {
       html.input.setRangeText('\t', html.input.selectionStart, html.input.selectionEnd, 'end');
+      if (live) {
+        const markdown = html.input.value;
+        const output = convertMarkdown(markdown);
+        html.output.innerHTML = output;
+      }
     }
   }
 });
