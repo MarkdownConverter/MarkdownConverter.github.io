@@ -60,29 +60,24 @@ function convertMarkdown(text) {
 		  const content = unorderedMatch ? unorderedMatch[1] : orderedMatch[1];
 		  const currentType = unorderedMatch ? 'ul' : 'ol';
 
-      while (listStack.length > indentLevel) {
-        const closingType = listStack.pop();
-        output += `${indent()}</${closingType}>\n`;
+			if (!inList) {
+        inList = true;
+        listType = currentType;
+        listItems = '';
+      } else if (listType !== currentType) {
+        html += `<${listType}>${listItems}</${listType}>\n`;
+        listType = currentType;
+        listItems = '';
       }
 
-      if (listStack.length === indentLevel && listStack.length > 0 && listStack[listStack.length - 1] !== currentType) {
-        const closingType = listStack.pop();
-        output += `${indent()}</${closingType}>\n`;
-      }
-
-      if (listStack.length === indentLevel) {
-        output += `${indent()}<${currentType}>\n`;
-        listStack.push(currentType);
-      }
-      
 			listItems += `${indent()}<li>${processInline(escapeHtml(content))}</li>`;
       continue;
-		} else {
-      while (listStack.length > 0) {
-        const closingType = listStack.pop();
-        output += `${indent()}</${closingType}>\n`;
-      }
-    }
+		} else if (inList) {
+			html += `${indent()}<${listType}>${listItems}</${listType}>\n`;
+			inList = false;
+			listType = '';
+			listItems = '';
+		}
 
 		// Headings
 		const headingMatch = line.match(/^\s*(#{1,6})\s+(.+)$/);
